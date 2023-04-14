@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Об авторе проекта{% endblock %}
+{% block content %}
+{% load static %}
+<div class="container">
+  <h3 class="card col-6">Привет, я автор</h3>
+  <div >
+    <h5 class="card col-6">Светлана Сычева</h5>
+    <img src="{% static 'img/smile.png' %}" width="50" height="50" class="d-inline-block align-top" alt="">
+    <div class="card-body"> апрель 2023</div>
+    <p>
+  Пока особо нечего сказать. Надеюсь скоро ситуация изменится, появится больше уверенности в знаниях и умениях.<br>  Проекты, в который принимала участие можно посмотренть на 
+    <a href="https://github.com/SvetlanaSy" class="btn btn-primary">GitHub repository</a>
+    </p>
+  </div>
+</div>
+{% endblock %} 
