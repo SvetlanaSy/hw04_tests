@@ -2,12 +2,9 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 
 from ..models import Group, Post
-
-from posts import constants
+from posts.constants import POST_TEXT_LIMIT as num
 
 User = get_user_model()
-
-num = constants.POST_TEXT_LIMIT
 
 
 class PostModelTest(TestCase):
@@ -22,19 +19,16 @@ class PostModelTest(TestCase):
         )
         cls.post = Post.objects.create(
             author=cls.user,
-            text='Тестовый пост',
+            text='Тестовый пост удлиненный',
         )
 
     def test_models_have_correct_object_names(self):
         """Проверяем, что у моделей корректно работает __str__."""
         post = PostModelTest.post
         group = PostModelTest.group
-
-        expected_object_post_name = 'Тестовый пост'
-        expected_object_group_name = 'Тестовая группа'
         field_tested = {
-            expected_object_post_name: post.text[:num],
-            expected_object_group_name: group.title,
+            'Тестовый пост у': post.text[:num],
+            'Тестовая группа': group.title,
         }
         for field, expected_value in field_tested.items():
             with self.subTest(field=field):

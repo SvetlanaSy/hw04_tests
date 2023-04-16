@@ -1,11 +1,8 @@
-from django.contrib.auth import get_user_model
 from django.test import TestCase, Client
 from django.urls import reverse
 
-from posts.models import Post, Group
+from posts.models import Post, Group, User
 from posts.forms import PostForm
-
-User = get_user_model()
 
 
 class PostCreateFormTests(TestCase):
@@ -30,7 +27,11 @@ class PostCreateFormTests(TestCase):
         self.authorized_client.force_login(self.user)
 
     def test_create_post(self):
-        posts_count = Post.objects.count()
+        """Валидная форма создает запись в Post."""
+        post_list = Post.objects.all()
+        id_list = []
+        for post in post_list:
+            id_list.append(self.post.id)
         form_data = {
             'text': 'Созданный пост',
             'group': self.group.id,
@@ -40,16 +41,25 @@ class PostCreateFormTests(TestCase):
             data=form_data,
             follow=True
         )
+        post_created = Post.objects.exclude(id__in=id_list)
         self.assertRedirects(response, reverse('posts:profile',
                              args=[self.post.author]))
-        self.assertEqual(Post.objects.count(), posts_count + 1)
+        self.assertEqual(post_created.count(), 1)
+        self.assertEqual(post_created[0].text, form_data['text'])
+        self.assertEqual(post_created[0].group.id, form_data['group'])
+        self.assertEqual(post_created[0].author, self.user)
 
     def test_edit_post(self):
+        """Валидная форма редактирует запись в Post."""
+        self.group_2 = Group.objects.create(
+            title='Second group',
+            slug='test_slug_2',
+            description='Тестовое описание',
+        )
         posts_count = Post.objects.count()
-        post_first = Post.objects.get(id=self.post.id)
         form_edit = {
             'text': 'Редактированный текст',
-            'group': self.group.id,
+            'group': self.group_2.id,
         }
         response = self.authorized_client.post(
             reverse('posts:post_edit', kwargs={'post_id': self.post.pk}),
@@ -61,4 +71,5 @@ class PostCreateFormTests(TestCase):
         self.assertEqual(Post.objects.count(), posts_count)
         self.assertRedirects(response, reverse('posts:post_detail', kwargs={
                                                'post_id': self.post.pk}))
-        self.assertNotEqual(post_first.text, post_edit.text)
+        self.assertEqual(post_edit.group.id, form_edit['group'])
+        self.assertEqual(post_edit.author, self.user)
