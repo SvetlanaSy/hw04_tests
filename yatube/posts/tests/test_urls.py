@@ -1,18 +1,8 @@
 from http import HTTPStatus
 
-from django.contrib.auth import get_user_model
 from django.test import TestCase, Client
 
-from posts.models import Post, Group
-
-User = get_user_model()
-
-
-class StaticURLTests(TestCase):
-    def test_homepage(self):
-        guest_client = Client()
-        response = guest_client.get('/')
-        self.assertEqual(response.status_code, HTTPStatus.OK)
+from posts.models import Post, Group, User
 
 
 class PostURLTests(TestCase):
@@ -84,8 +74,8 @@ class PostURLTests(TestCase):
         """URL-адрес использует соответствующий шаблон."""
         templates_url_names = {
             '/': 'posts/index.html',
-            '/group/test-slug/': 'posts/group_list.html',
-            '/profile/auth/': 'posts/profile.html',
+            f'/group/{self.group.slug}/': 'posts/group_list.html',
+            f'/profile/{self.user}/': 'posts/profile.html',
             f'/posts/{self.post.pk}/': 'posts/post_detail.html',
             '/create/': 'posts/create_post.html',
             f'/posts/{self.post.pk}/edit/': 'posts/create_post.html',
@@ -97,9 +87,22 @@ class PostURLTests(TestCase):
 
     def test_post_edit_url_redirect_unauthorized_on_profile(self):
         """Страница по адресу /edit/ перенаправит
-        пользователя на страницу /profile/.
+        пользователя на страницу /post_detail/.
         """
         response = self.authorized_client.get(
             f'/posts/{self.post.pk}/edit/', follow=True)
         self.assertRedirects(
-            response, f'/profile/{self.user.username}/')
+            response, f'/posts/{self.post.pk}/')
+
+    def test_post_redirect_anonymous_on_admin_login(self):
+        """Страницы по адресу /create/,/edit/ перенаправит анонимного
+        пользователя на страницу логина.
+        """
+        post_address_redirects = {
+            '/create/': '/auth/login/?next=/create/',
+            f'/posts/{self.post.pk}/edit/':
+            f'/auth/login/?next=/posts/{self.post.pk}/edit/', }
+        for address, redirect in post_address_redirects.items():
+            with self.subTest(address=address):
+                response = self.client.get(address, follow=True)
+                self.assertRedirects(response, redirect)

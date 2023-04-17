@@ -1,10 +1,7 @@
-from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from ..models import Group, Post
-from posts.constants import POST_TEXT_LIMIT as num
-
-User = get_user_model()
+from ..models import Group, Post, User
+from posts.constants import POST_TEXT_LIMIT as NUM
 
 
 class PostModelTest(TestCase):
@@ -27,7 +24,7 @@ class PostModelTest(TestCase):
         post = PostModelTest.post
         group = PostModelTest.group
         field_tested = {
-            'Тестовый пост у': post.text[:num],
+            'Тестовый пост у': post.text[:NUM],
             'Тестовая группа': group.title,
         }
         for field, expected_value in field_tested.items():

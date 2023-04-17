@@ -1,13 +1,10 @@
-from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
 from django import forms
 
-from posts.models import Post, Group
-from posts.constants import POSTS_FOR_PAGE_TEST as pages_num
-from posts.constants import POSTS_LIMIT_P_PAGE as num
-
-User = get_user_model()
+from posts.models import Post, Group, User
+from posts.constants import POSTS_FOR_PAGE_TEST as PAGES_NUM
+from posts.constants import POSTS_LIMIT_P_PAGE as NUM
 
 
 class PostPagesTest(TestCase):
@@ -69,12 +66,12 @@ class PostPagesTest(TestCase):
             'posts:group_list', kwargs={'slug': self.group.slug}))
         first_object = response.context['page_obj'][0]
         group_text_0 = first_object.text
-        group_0 = first_object.group
+        group_group_0 = first_object.group
         group_author_0 = first_object.author
         group_post_id_0 = first_object.id
         self.assertEqual(group_post_id_0, self.post.id)
         self.assertEqual(group_text_0, self.post.text)
-        self.assertEqual(group_0, self.group)
+        self.assertEqual(group_group_0, self.group)
         self.assertEqual(group_author_0, self.post.author)
 
     def test_profile_page_show_correct_context(self):
@@ -169,13 +166,9 @@ class PaginatorViewsTest(TestCase):
             slug='test-slug',
             description='Тестовое описание',
         )
-        cls.post = Post.objects.create(
-            author=cls.user,
-            text='Тестовый пост',
-            group=cls.group,)
-        for post_example in range(pages_num):
-            Post.objects.create(
-                text=f'text{post_example}',
+        for i in range(PAGES_NUM):
+            cls.post = Post.objects.create(
+                text=f'text{i}',
                 author=cls.user, group=cls.group)
 
     def test_first_page_contains_ten_records(self):
@@ -189,10 +182,10 @@ class PaginatorViewsTest(TestCase):
                                   'username': self.post.author}))]
         for response in page_responses:
             with self.subTest(response=response):
-                self.assertEqual(len(response.context['page_obj']), num)
+                self.assertEqual(len(response.context['page_obj']), NUM)
 
-    def test_second_page_contains_four_records(self):
-        '''Количество постов на второй странице должно быть 4'''
+    def test_second_page_contains_three_records(self):
+        '''Количество постов на второй странице должно быть 3'''
         page_responses = [self.client.get(
                           reverse('posts:index') + '?page=2'),
                           self.client.get(reverse(
@@ -203,4 +196,5 @@ class PaginatorViewsTest(TestCase):
                                   'username': self.post.author}) + '?page=2')]
         for response in page_responses:
             with self.subTest(response=response):
-                self.assertEqual(len(response.context['page_obj']), 4)
+                self.assertEqual(
+                    len(response.context['page_obj']), PAGES_NUM - NUM)
