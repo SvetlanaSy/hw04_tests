@@ -24,13 +24,13 @@ class PostModelTest(TestCase):
         post = PostModelTest.post
         group = PostModelTest.group
         field_tested = {
-            'Тестовый пост у': post.text[:NUM],
-            'Тестовая группа': group.title,
+            post: post.text[:NUM],
+            group: group.title,
         }
         for field, expected_value in field_tested.items():
             with self.subTest(field=field):
                 self.assertEqual(
-                    field, str(expected_value))
+                    str(field), expected_value)
 
     def test_verbose_name(self):
         """verbose_name в полях совпадает с ожидаемым."""

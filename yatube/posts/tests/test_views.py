@@ -32,7 +32,7 @@ class PostPagesTest(TestCase):
         """URL-адрес использует соответствующий шаблон."""
         templates_pages_names = {
             reverse('posts:index'): 'posts/index.html',
-            reverse('posts:group_list', kwargs={'slug': 'test-slug'}):
+            reverse('posts:group_list', kwargs={'slug': self.group.slug}):
             'posts/group_list.html',
             reverse('posts:profile', kwargs={'username': self.post.author}):
             'posts/profile.html',
@@ -65,28 +65,33 @@ class PostPagesTest(TestCase):
         response = self.authorized_client.get(reverse(
             'posts:group_list', kwargs={'slug': self.group.slug}))
         first_object = response.context['page_obj'][0]
-        group_text_0 = first_object.text
-        group_group_0 = first_object.group
-        group_author_0 = first_object.author
-        group_post_id_0 = first_object.id
-        self.assertEqual(group_post_id_0, self.post.id)
-        self.assertEqual(group_text_0, self.post.text)
-        self.assertEqual(group_group_0, self.group)
-        self.assertEqual(group_author_0, self.post.author)
+        object_context = {
+            first_object.text: self.post.text,
+            first_object.group: self.group,
+            first_object.author: self.post.author,
+            first_object.id: self.post.id,
+            first_object.group.title: self.group.title,
+            first_object.group.slug: self.group.slug,
+            first_object.group.description: self.group.description,
+            first_object.group.id: self.group.id, }
+        for object, value in object_context.items():
+            with self.subTest(object=object):
+                self.assertEqual(object, value)
 
     def test_profile_page_show_correct_context(self):
-        """Шаблон posts_group_list сформирован с правильным контекстом."""
+        """Шаблон posts_profile сформирован с правильным контекстом."""
         response = self.authorized_client.get(reverse(
             'posts:profile', kwargs={'username': self.post.author}))
         first_object = response.context['page_obj'][0]
-        profile_author_0 = first_object.author
-        profile_text_0 = first_object.text
-        profile_group_0 = first_object.group
-        profile_post_id_0 = first_object.id
-        self.assertEqual(profile_post_id_0, self.post.id)
-        self.assertEqual(profile_group_0, self.group)
-        self.assertEqual(profile_text_0, self.post.text)
-        self.assertEqual(profile_author_0, self.user)
+        object_context = {
+            first_object.author: self.user,
+            first_object.text: self.post.text,
+            first_object.group: self.group,
+            first_object.id: self.post.id,
+            first_object.author.id: self.user.id, }
+        for object, value in object_context.items():
+            with self.subTest(object=object):
+                self.assertEqual(object, value)
 
     def test_post_detail_pages_show_correct_context(self):
         """Шаблон post_detail сформирован с правильным контекстом."""
@@ -123,6 +128,10 @@ class PostPagesTest(TestCase):
             with self.subTest(value=value):
                 form_field = response.context.get('form').fields.get(value)
                 self.assertIsInstance(form_field, expected)
+        self.assertEqual(response.context.get('post').text, self.post.text)
+        self.assertEqual(response.context.get('post').group, self.post.group)
+        self.assertEqual(response.context.get('post').author, self.user)
+        self.assertTrue('is_edit')
 
     def test_post_added_correctly(self):
         """Пост при создании добавлен корректно"""
@@ -176,7 +185,7 @@ class PaginatorViewsTest(TestCase):
         page_responses = [self.client.get(reverse('posts:index')),
                           self.client.get(reverse(
                               'posts:group_list', kwargs={
-                                  'slug': 'test-slug'})),
+                                  'slug': self.group.slug})),
                           self.client.get(reverse(
                               'posts:profile', kwargs={
                                   'username': self.post.author}))]
@@ -190,7 +199,7 @@ class PaginatorViewsTest(TestCase):
                           reverse('posts:index') + '?page=2'),
                           self.client.get(reverse(
                               'posts:group_list', kwargs={
-                                  'slug': 'test-slug'}) + '?page=2'),
+                                  'slug': self.group.slug}) + '?page=2'),
                           self.client.get(reverse(
                               'posts:profile', kwargs={
                                   'username': self.post.author}) + '?page=2')]

@@ -1,6 +1,7 @@
 from http import HTTPStatus
 
 from django.test import TestCase, Client
+from django.urls import reverse
 
 from posts.models import Post, Group, User
 
@@ -85,23 +86,27 @@ class PostURLTests(TestCase):
                 response = self.authorized_author.get(address)
                 self.assertTemplateUsed(response, template)
 
-    def test_post_edit_url_redirect_unauthorized_on_profile(self):
+    def test_post_edit_url_redirect_unauthorized_on_detail(self):
         """Страница по адресу /edit/ перенаправит
         пользователя на страницу /post_detail/.
         """
         response = self.authorized_client.get(
-            f'/posts/{self.post.pk}/edit/', follow=True)
+            reverse('posts:post_edit', kwargs={'post_id': self.post.pk}),
+            follow=True)
         self.assertRedirects(
-            response, f'/posts/{self.post.pk}/')
+            response, reverse('posts:post_detail',
+                              kwargs={'post_id': self.post.pk}))
 
     def test_post_redirect_anonymous_on_admin_login(self):
         """Страницы по адресу /create/,/edit/ перенаправит анонимного
         пользователя на страницу логина.
         """
         post_address_redirects = {
-            '/create/': '/auth/login/?next=/create/',
-            f'/posts/{self.post.pk}/edit/':
-            f'/auth/login/?next=/posts/{self.post.pk}/edit/', }
+            reverse('posts:post_create'):
+            reverse('users:login') + '?next=' + reverse('posts:post_create'),
+            reverse('posts:post_edit', kwargs={'post_id': self.post.pk}):
+            reverse('users:login') + '?next=' + reverse(
+                'posts:post_edit', kwargs={'post_id': self.post.pk}), }
         for address, redirect in post_address_redirects.items():
             with self.subTest(address=address):
                 response = self.client.get(address, follow=True)
