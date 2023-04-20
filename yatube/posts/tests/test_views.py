@@ -34,7 +34,8 @@ class PostPagesTest(TestCase):
             reverse('posts:index'): 'posts/index.html',
             reverse('posts:group_list', kwargs={'slug': self.group.slug}):
             'posts/group_list.html',
-            reverse('posts:profile', kwargs={'username': self.post.author}):
+            reverse('posts:profile', kwargs={
+                'username': self.post.author.username}):
             'posts/profile.html',
             reverse('posts:post_detail', kwargs={'post_id': self.post.pk}):
             'posts/post_detail.html',
@@ -65,15 +66,16 @@ class PostPagesTest(TestCase):
         response = self.authorized_client.get(reverse(
             'posts:group_list', kwargs={'slug': self.group.slug}))
         first_object = response.context['page_obj'][0]
+        group_object = response.context['group']
         object_context = {
             first_object.text: self.post.text,
             first_object.group: self.group,
             first_object.author: self.post.author,
             first_object.id: self.post.id,
-            first_object.group.title: self.group.title,
-            first_object.group.slug: self.group.slug,
-            first_object.group.description: self.group.description,
-            first_object.group.id: self.group.id, }
+            group_object.title: self.group.title,
+            group_object.slug: self.group.slug,
+            group_object.description: self.group.description,
+            group_object.id: self.group.id, }
         for object, value in object_context.items():
             with self.subTest(object=object):
                 self.assertEqual(object, value)
@@ -83,12 +85,13 @@ class PostPagesTest(TestCase):
         response = self.authorized_client.get(reverse(
             'posts:profile', kwargs={'username': self.post.author}))
         first_object = response.context['page_obj'][0]
+        author_object = response.context['author']
         object_context = {
             first_object.author: self.user,
             first_object.text: self.post.text,
             first_object.group: self.group,
             first_object.id: self.post.id,
-            first_object.author.id: self.user.id, }
+            author_object.id: self.user.id, }
         for object, value in object_context.items():
             with self.subTest(object=object):
                 self.assertEqual(object, value)
@@ -131,7 +134,7 @@ class PostPagesTest(TestCase):
         self.assertEqual(response.context.get('post').text, self.post.text)
         self.assertEqual(response.context.get('post').group, self.post.group)
         self.assertEqual(response.context.get('post').author, self.user)
-        self.assertTrue('is_edit')
+        self.assertTrue(response.context.get('is_edit'))
 
     def test_post_added_correctly(self):
         """Пост при создании добавлен корректно"""
