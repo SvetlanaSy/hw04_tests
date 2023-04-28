@@ -1,12 +1,10 @@
 {% extends 'base.html' %}
 {% load thumbnail %}
-{% load cache %}
-  {% block title %} <title>Это главная страница проекта Yatube</title> {% endblock %}
+  {% block title %} <title>Это страница подписок на авторов</title> {% endblock %}
     {% block content %}
     {% include 'posts/includes/switcher.html' %}
       <div class="container py-5">     
         <h1>Последние обновления на сайте</h1>
-        {% cache 20 index_page %}
         {% for post in page_obj %}
         <article>
           <ul>
@@ -29,9 +27,7 @@
         </article>  
           {% if not forloop.last %}<hr>{% endif %}
         {% endfor %}
-        
         {% include 'posts/includes/paginator.html' %}
-        {% endcache %}
       </div>  
     {% endblock %}
     

@@ -71,6 +71,11 @@ class PostURLTests(TestCase):
         response = self.client.get('/unexisting_page/')
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
 
+    def test_unexisting_page_uses_correct_template(self):
+        """Страница /unexisting_page/ использует правильный шаблон ."""
+        response = self.client.get('/unexisting_page/')
+        self.assertTemplateUsed(response, 'core/404.html')
+
     def test_urls_uses_correct_template(self):
         """URL-адрес использует соответствующий шаблон."""
         templates_url_names = {
@@ -106,7 +111,10 @@ class PostURLTests(TestCase):
             reverse('users:login') + '?next=' + reverse('posts:post_create'),
             reverse('posts:post_edit', kwargs={'post_id': self.post.pk}):
             reverse('users:login') + '?next=' + reverse(
-                'posts:post_edit', kwargs={'post_id': self.post.pk}), }
+                'posts:post_edit', kwargs={'post_id': self.post.pk}),
+            reverse('posts:add_comment', kwargs={'post_id': self.post.pk}):
+            reverse('users:login') + '?next=' + reverse(
+                'posts:add_comment', kwargs={'post_id': self.post.pk}), }
         for address, redirect in post_address_redirects.items():
             with self.subTest(address=address):
                 response = self.client.get(address, follow=True)

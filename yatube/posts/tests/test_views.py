@@ -1,8 +1,9 @@
 from django.test import Client, TestCase
 from django.urls import reverse
 from django import forms
+from django.core.cache import cache
 
-from posts.models import Post, Group, User
+from posts.models import Post, Group, User, Comment
 from posts.constants import POSTS_FOR_PAGE_TEST as PAGES_NUM
 from posts.constants import POSTS_LIMIT_P_PAGE as NUM
 
@@ -25,8 +26,10 @@ class PostPagesTest(TestCase):
         )
 
     def setUp(self):
+        cache.clear()
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
+        # self.authorized_client.force_login(self.any_user)
 
     def test_pages_uses_correct_template(self):
         """URL-адрес использует соответствующий шаблон."""
@@ -167,6 +170,18 @@ class PostPagesTest(TestCase):
         group_2 = response_group_2.context['page_obj']
         self.assertNotIn(self.post, group_2)
 
+    def test_index_page_cache(self):
+        response = self.client.get(reverse('posts:index'))
+        post_cont = response.content
+        self.post.delete()
+        response = self.client.get(reverse('posts:index'))
+        post_del = response.content
+        self.assertEqual(post_cont, post_del)
+        cache.clear()
+        response = self.client.get(reverse('posts:index'))
+        post_cache = response.content
+        self.assertNotEqual(post_del, post_cache)
+
 
 class PaginatorViewsTest(TestCase):
     @classmethod
@@ -210,3 +225,39 @@ class PaginatorViewsTest(TestCase):
             with self.subTest(response=response):
                 self.assertEqual(
                     len(response.context['page_obj']), PAGES_NUM - NUM)
+
+
+class CommentTest(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.user = User.objects.create_user(username='auth')
+        cls.any_user = User.objects.create_user(username='AnyUser')
+        cls.post = Post.objects.create(
+            author=cls.user,
+            text='Тестовый пост',
+        )
+        cls.comment = Comment.objects.create(
+            post=cls.post,
+            author=cls.any_user,
+            text='Тестовый комментарий',
+        )
+
+    def setUp(self):
+        self.authorized_client = Client()
+        self.authorized_client.force_login(self.any_user)
+
+    def test_comment_added_correctly(self):
+        comment_new = Comment.objects.create(
+            text='New comment',
+            author=self.user,
+            post=self.post,
+        )
+        response = self.authorized_client.get(reverse(
+            'posts:post_detail', kwargs={
+                'post_id': self.post.pk}))
+        first_object = response.context['comments'][1]
+        self.assertEqual(first_object.post, comment_new.post)
+        self.assertEqual(first_object.text, comment_new.text)
+        self.assertEqual(first_object.author, comment_new.author)
+        self.assertEqual(first_object.id, comment_new.id)
